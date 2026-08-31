@@ -2,13 +2,16 @@ import { Request, Response } from "express";
 import crypto from "node:crypto";
 import path from "node:path";
 
-import { getSupabase } from "../utils/superbase.js";
-import getContentType from "../utils/utils.js";
+import { getSupabase, supabase } from "../utils/superbase.js";
+import { prisma } from "../lib/prisma.js";
+import { getContentType, processDocument } from "../utils/utils.js";
+import { chunkAndEmbading } from "../utils/rag.js";
+import { success } from "better-auth";
+import { pineconeIndex } from "../utils/pinecone.config.js";
 
 const ingestDocument = async (req: Request, res: Response) => {
   try {
     const file = req.file;
-
     // 1. Check file
     if (!file) {
       return res.status(400).json({
@@ -18,7 +21,7 @@ const ingestDocument = async (req: Request, res: Response) => {
     }
 
     // 2. Get user ID
-    const userId = req.body.userId;
+    const userId = req.body.userId as string;
 
     if (!userId) {
       return res.status(400).json({
@@ -30,10 +33,8 @@ const ingestDocument = async (req: Request, res: Response) => {
     // 3. Allowed extensions
     const allowedExtensions = [".pdf", ".docx", ".txt"];
 
-    const extension = path
-      .extname(file.originalname)
-      .toLowerCase();
-
+    const extension = path.extname(file.originalname).toLowerCase();
+    const fileType = getContentType(extension);
     if (!allowedExtensions.includes(extension)) {
       return res.status(400).json({
         success: false,
@@ -62,13 +63,13 @@ const ingestDocument = async (req: Request, res: Response) => {
     const documentId = crypto.randomUUID();
 
     // 6. Sanitize filename
-    const filename = file.originalname.replace(
+    const fileName = file.originalname.replace(
       /[^a-zA-Z0-9._-]/g,
-      "_"
-    );
+      "_",
+    ) as string;
 
     // 7. Create storage path
-    const filePath = `${userId}/${documentId}/${filename}`;
+    const filePath = `${userId}/${documentId}/${fileName}`;
 
     // console.log("Uploading:", {
     //   userId,
@@ -88,7 +89,7 @@ const ingestDocument = async (req: Request, res: Response) => {
       .upload(filePath, file.buffer, {
         contentType:
           file.mimetype === "application/octet-stream"
-            ? getContentType(extension)
+            ? fileType
             : file.mimetype,
 
         upsert: false,
@@ -104,13 +105,41 @@ const ingestDocument = async (req: Request, res: Response) => {
         details: error.message,
       });
     }
+    const document = await prisma.document.create({
+      data: {
+        id: documentId,
+        userId,
+        fileName,
+        fileType,
+        fileSize: file.size,
+        storagePath: filePath,
+        status: "PROCESSING",
+      },
+    });
 
-    // 10. Success
-    return res.status(201).json({
-      success: true,
-      message: "Document uploaded successfully",
+    // process document
+
+    const text = await processDocument({
+      buffer: file.buffer,
+      fileType,
+      userId,
+      documentId: "2",
+      fileName,
+    });
+
+    // chunking
+
+    const result = await chunkAndEmbading({
+      fileName,
+      text,
+      userId,
       documentId,
-      path: data.path,
+    });
+
+    return res.status(200).json({
+      success: true,
+      chunkSize: result.chunks,
+      message: "document added to kb",
     });
   } catch (error) {
     console.error("Ingest error:", error);
@@ -122,8 +151,89 @@ const ingestDocument = async (req: Request, res: Response) => {
   }
 };
 
-const getAllDocuments = async (req: Request, res: Response) => { }
+const getAllDocuments = async (req: Request, res: Response) => {
+  const userId = req.body.userId;
+  try {
+    const documents = await prisma.document.findMany({
+      where: { userId },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        status: true,
+        createdAt: true,
+      },
+    });
 
-const deleteDocument = async (req: Request, res: Response) => { }
+    return res.status(200).json({
+      success: true,
+      documents,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch documents",
+    });
+  }
+};
+
+const deleteDocument = async (req: Request, res: Response) => {
+  try {
+    const documentId = req.params.id as string;
+    const userId = req.body.userId;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required",
+      });
+    }
+
+    const document = await prisma.document.findFirst({
+      where: { id: documentId, userId },
+    });
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        error: "Document not found",
+      });
+    }
+
+    // delete from superbase
+
+    const supabaseClient = getSupabase();
+    const { error: storageError } =
+      await supabaseClient.storage
+        .from("documents")
+        .remove([
+          document.storagePath,
+        ]);
+
+    if (storageError) {
+      throw new Error(
+        `Storage deletion failed: ${storageError.message}`
+      );
+    }
+
+    await pineconeIndex.deleteMany({
+      documentId: document.id,
+    });
+
+     return res.status(200).json({
+      success: true,
+      message: "Document deleted successfully",
+    });
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({
+      success: false,
+      error: "Failed to delete document",
+    });
+  }
+};
 
 export { ingestDocument, getAllDocuments, deleteDocument };
