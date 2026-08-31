@@ -1,7 +1,7 @@
 import express from "express"
 import { addApi, deleteApi, updateApi } from "../controllers/api.js"
 
-const apiRouter = express()
+const apiRouter = express.Router();
 
 apiRouter.post('/add-api',addApi);
 apiRouter.patch('update-api',updateApi);
