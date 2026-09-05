@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: doc-helper-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dochelper
+      POSTGRES_PASSWORD: dochelper
+      POSTGRES_DB: dochelper
+    ports:
+      - "5432:5432"
+    volumes:
+      - doc_helper_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  doc_helper_postgres_data:

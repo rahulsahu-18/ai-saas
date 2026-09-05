@@ -89,25 +89,27 @@ export default function KnowledgeBase() {
     setError("");
 
     try {
-      /*
-       * Connect your Express API here.
-       *
-       * const formData = new FormData();
-       * formData.append("file", selectedFile);
-       *
-       * await fetch("/api/knowledge-base/upload", {
-       *   method: "POST",
-       *   body: formData,
-       * });
-       */
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1500)
-      );
+      const response = await fetch("http://localhost:5000/api/v1/ingest", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error ?? "Upload failed");
+      }
 
       setSelectedFile(null);
-    } catch {
-      setError("Something went wrong while uploading the file.");
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Something went wrong while uploading the file."
+      );
     } finally {
       setIsUploading(false);
     }

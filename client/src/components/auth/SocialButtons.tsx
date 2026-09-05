@@ -7,7 +7,7 @@ export default function SocialButtons() {
   ) => {
     await authClient.signIn.social({
       provider,
-      callbackURL: "/dashboard",
+      callbackURL: "http://localhost:5173/",
     });
   };
 

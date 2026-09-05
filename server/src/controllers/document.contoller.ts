@@ -8,6 +8,16 @@ import { getContentType, processDocument } from "../utils/utils.js";
 import { chunkAndEmbading } from "../utils/rag.js";
 import { success } from "better-auth";
 import { pineconeIndex } from "../utils/pinecone.config.js";
+import { auth } from "../lib/auth.js";
+import { fromNodeHeaders } from "better-auth/node";
+
+const getAuthenticatedUserId = async (req: Request) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  return session?.user.id;
+};
 
 const ingestDocument = async (req: Request, res: Response) => {
   try {
@@ -21,7 +31,7 @@ const ingestDocument = async (req: Request, res: Response) => {
     }
 
     // 2. Get user ID
-    const userId = req.body.userId as string;
+    const userId = await getAuthenticatedUserId(req);
 
     if (!userId) {
       return res.status(400).json({
@@ -123,7 +133,7 @@ const ingestDocument = async (req: Request, res: Response) => {
       buffer: file.buffer,
       fileType,
       userId,
-      documentId: "2",
+      documentId,
       fileName,
     });
 
@@ -152,8 +162,12 @@ const ingestDocument = async (req: Request, res: Response) => {
 };
 
 const getAllDocuments = async (req: Request, res: Response) => {
-  const userId = req.body.userId;
   try {
+    const userId = await getAuthenticatedUserId(req);
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
     const documents = await prisma.document.findMany({
       where: { userId },
       orderBy: {
@@ -184,7 +198,7 @@ const getAllDocuments = async (req: Request, res: Response) => {
 const deleteDocument = async (req: Request, res: Response) => {
   try {
     const documentId = req.params.id as string;
-    const userId = req.body.userId;
+    const userId = await getAuthenticatedUserId(req);
 
     if (!userId) {
       return res.status(400).json({
@@ -221,6 +235,10 @@ const deleteDocument = async (req: Request, res: Response) => {
 
     await pineconeIndex.deleteMany({
       documentId: document.id,
+    });
+
+    await prisma.document.delete({
+      where: { id: document.id },
     });
 
      return res.status(200).json({

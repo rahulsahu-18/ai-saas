@@ -5,7 +5,7 @@ import {
   File,
   Search,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface KnowledgeFile {
   id: string;
@@ -15,57 +15,58 @@ interface KnowledgeFile {
   uploadedAt: string;
 }
 
-const initialFiles: KnowledgeFile[] = [
-  {
-    id: "1",
-    name: "product-documentation.pdf",
-    type: "PDF",
-    size: 2450000,
-    uploadedAt: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "api-reference.docx",
-    type: "DOCX",
-    size: 1280000,
-    uploadedAt: "Yesterday",
-  },
-  {
-    id: "3",
-    name: "project-notes.txt",
-    type: "TXT",
-    size: 34000,
-    uploadedAt: "2 days ago",
-  },
-  {
-    id: "4",
-    name: "company-guide.doc",
-    type: "DOC",
-    size: 890000,
-    uploadedAt: "3 days ago",
-  },
-];
-
 export default function MyFiles() {
-  const [files, setFiles] = useState<KnowledgeFile[]>(
-    initialFiles
-  );
+  const [files, setFiles] = useState<KnowledgeFile[]>([]);
 
   const [search, setSearch] = useState("");
 
-  const handleDelete = (id: string) => {
+  useEffect(() => {
+    const loadFiles = async () => {
+      const response = await fetch("http://localhost:5000/api/v1/get-all", {
+        credentials: "include",
+      });
+      const result = await response.json();
+
+      if (!response.ok) return;
+
+      setFiles(
+        result.documents.map((file: {
+          id: string;
+          fileName: string;
+          fileType: string;
+          fileSize: number | null;
+          createdAt: string;
+        }) => ({
+          id: file.id,
+          name: file.fileName,
+          type: file.fileType.toUpperCase(),
+          size: file.fileSize ?? 0,
+          uploadedAt: new Date(file.createdAt).toLocaleDateString(),
+        }))
+      );
+    };
+
+    void loadFiles();
+  }, []);
+
+  const handleDelete = async (id: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this file?"
     );
 
     if (!confirmed) return;
 
-    setFiles((prev) =>
-      prev.filter((file) => file.id !== id)
+    const response = await fetch(
+      `http://localhost:5000/api/v1/delete-document/${id}`,
+      { method: "DELETE", credentials: "include" }
     );
+
+    if (response.ok) {
+      setFiles((prev) => prev.filter((file) => file.id !== id));
+    }
   };
 
-  const handleDownload = async (file: KnowledgeFile) => {
+  const handleDownload = async (_file: KnowledgeFile) => {
     /*
      * Later connect this to your Express backend.
      *

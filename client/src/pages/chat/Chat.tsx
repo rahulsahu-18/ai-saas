@@ -3,10 +3,7 @@ import {
   ArrowUp,
   FileText,
   Menu,
-  Plus,
-  Search,
   Sparkles,
-  X,
 } from "lucide-react";
 
 interface Source {

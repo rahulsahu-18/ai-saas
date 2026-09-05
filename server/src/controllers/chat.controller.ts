@@ -169,6 +169,6 @@ export const chat = async (req: Request, res: Response) => {
   `data: {}\n\n`
 );
 
-res.end();
+return res.end();
 
 };

@@ -1,6 +1,16 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { string, success } from "better-auth";
+import { auth } from "../lib/auth.js";
+import { fromNodeHeaders } from "better-auth/node";
+
+const getAuthenticatedUserId = async (req: Request) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  return session?.user.id;
+};
 interface ISavedAPI {
     id:string
   name: string;
@@ -8,7 +18,8 @@ interface ISavedAPI {
   apiKey: string;
 }
 export const addApi = async (req: Request, res: Response) => {
-  const { userId, apiKey, name, provider } = req.body;
+  const { apiKey, name, provider } = req.body;
+  const userId = await getAuthenticatedUserId(req);
 
   if (!userId) {
     return res.status(403).json({
@@ -88,7 +99,8 @@ export const deleteApi = async (req: Request, res: Response) => {
 };
 
 export const updateApi = async (req: Request, res: Response) => {
-  const { userId, id, name, apiKey, provider } = req.body;
+  const { id, name, apiKey, provider } = req.body;
+  const userId = await getAuthenticatedUserId(req);
 
   if (!userId) {
     return res.status(403).json({
