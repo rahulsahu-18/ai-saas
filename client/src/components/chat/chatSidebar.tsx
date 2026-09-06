@@ -1,7 +1,59 @@
-import { FileText, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import axios from "axios";
+import { FileText, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+interface ChatSummary {
+    id: string;
+    title: string | null;
+}
+
+interface SidebarResponse {
+  chats: ChatSummary[];
+  success: boolean;
+}
 
 export function ChatSidebar() {
+  const [chatSidebar, setChatSidebar] = useState<ChatSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function loadChat() {
+      try {
+        const { data }: { data: SidebarResponse } = await axios.get(
+          "http://localhost:5000/api/v1/chat/all-chat",
+          { withCredentials: true },
+        );
+        setChatSidebar(data.chats);
+      } catch (error) {
+        console.error("Failed to load chats", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadChat();
+  }, []);
+
+  async function handleDelete(chatId: string) {
+    try {
+      await axios.delete(`http://localhost:5000/api/v1/chat/${chatId}`, {
+        withCredentials: true,
+      });
+      setChatSidebar((previousChats) =>
+        previousChats.filter((chat) => chat.id !== chatId),
+      );
+
+      if (location.pathname === `/chat/${chatId}`) {
+        navigate("/chat");
+      }
+    } catch (error) {
+      console.error("Failed to delete chat", error);
+    }
+  }
+
   return (
     <aside className="hidden w-64 shrink-0 border-r border-zinc-200 bg-white lg:flex lg:flex-col">
 
@@ -34,13 +86,61 @@ export function ChatSidebar() {
           Documents
         </Link>
 
-        <a
-          href="/chat"
+        <Link
+          to="/chat"
           className="mt-1 flex items-center gap-3 rounded-lg bg-zinc-100 px-3 py-2.5 text-sm font-medium text-zinc-950"
         >
           <Sparkles size={17} />
           Chat
-        </a>
+        </Link>
+
+        <div className="mt-5">
+          <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            Recent chats
+          </p>
+
+          <div className="mt-2 space-y-1">
+            {isLoading && (
+              <p className="px-3 py-2 text-xs text-zinc-400">Loading chats...</p>
+            )}
+
+            {!isLoading && chatSidebar.length === 0 && (
+              <p className="px-3 py-2 text-xs text-zinc-400">No chats yet</p>
+            )}
+
+            {chatSidebar.map((chat) => {
+              const isActive = location.pathname === `/chat/${chat.id}`;
+
+              return (
+                <div
+                  key={chat.id}
+                  className={`group flex items-center rounded-lg text-sm transition ${
+                    isActive
+                      ? "bg-zinc-100 text-zinc-950"
+                      : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                  }`}
+                >
+                  <Link
+                    to={`/chat/${chat.id}`}
+                    className="min-w-0 flex-1 truncate px-3 py-2.5"
+                  >
+                    {chat.title || "Untitled chat"}
+                  </Link>
+
+                  <button
+                    type="button"
+                    aria-label={`Delete ${chat.title || "chat"}`}
+                    title="Delete chat"
+                    onClick={() => void handleDelete(chat.id)}
+                    className="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 focus:opacity-100"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
       </nav>
 

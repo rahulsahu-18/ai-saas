@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:watch\"",
-    "dev:server": "tsx src/server.ts",
+    "dev:server": "tsx watch src/server.ts",
     "dev:watch": "tsc --watch",
     "build": "tsc",
     "start": "node dist/server.js"

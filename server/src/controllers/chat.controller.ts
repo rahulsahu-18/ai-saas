@@ -5,7 +5,7 @@ import { model } from "../utils/model.js";
 import { getAuthenticatedUserId, systemMessage } from "../utils/utils.js";
 
 export const allChat = async (req: Request, res: Response) => {
-  const userId = req.body.userId;
+  const userId = await getAuthenticatedUserId(req);
   if (!userId)
     return res
       .status(403)
@@ -28,7 +28,7 @@ export const allChat = async (req: Request, res: Response) => {
 };
 
 export const singleChat = async (req: Request, res: Response) => {
-  const userId = req.body.userId;
+  const userId = await getAuthenticatedUserId(req);
   const chatId = req.params.id as string;
 
   if (!userId)
@@ -42,7 +42,7 @@ export const singleChat = async (req: Request, res: Response) => {
       .json({ success: false, message: "forbiden request chatId not found" });
 
   try {
-    const chat = prisma.chatMessage.findMany({
+    const chat = await prisma.chatMessage.findMany({
       where: { chatId },
       orderBy: { createdAt: "desc" },
     });
@@ -55,6 +55,38 @@ export const singleChat = async (req: Request, res: Response) => {
         success: false,
         message: "something went worng while get the chat",
       });
+  }
+};
+
+export const deleteChat = async (req: Request, res: Response) => {
+  const userId = await getAuthenticatedUserId(req);
+  const chatId = req.params.id as string;
+
+  if (!userId || !chatId) {
+    return res.status(403).json({
+      success: false,
+      message: "Forbidden request",
+    });
+  }
+
+  try {
+    const deletedChat = await prisma.chatHistory.deleteMany({
+      where: { id: chatId, userId },
+    });
+
+    if (deletedChat.count === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Chat not found",
+      });
+    }
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while deleting the chat",
+    });
   }
 };
 
@@ -109,6 +141,7 @@ export const chat = async (req: Request, res: Response) => {
             id:crypto.randomUUID(),
             chatId:currentChatId,
             role:"USER",
+            sources:[],
             content:message,
         }
     });
@@ -161,6 +194,7 @@ export const chat = async (req: Request, res: Response) => {
       chatId: currentChatId,
       role: "ASSISTANT",
       content: fullAnswer,
+      sources,
     },
   });
 

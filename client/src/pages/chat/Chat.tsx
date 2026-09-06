@@ -1,21 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUp, FileText, Menu } from "lucide-react";
 import { ChatSidebar, LoadingMessage } from "../../components/chat/chatSidebar";
 import { MessageBubble } from "../../components/chat/MessageBubble";
 import { useNavigate, useParams } from "react-router-dom";
-
-export interface Source {
-  id: string;
-  filename: string;
-  page?: number;
-  snippet?: string;
-}
+import axios from "axios";
 
 export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  sources?: Source[];
+  sources?: string[];
+}
+
+interface ApiMessage {
+  id: string;
+  role: "USER" | "ASSISTANT" | "user" | "assistant";
+  content: string;
+  sources?: string[];
+}
+
+function normalizeMessage(message: ApiMessage): Message {
+  return {
+    id: message.id,
+    role: message.role.toLowerCase() === "user" ? "user" : "assistant",
+    content: message.content,
+    sources: message.sources ?? [],
+  };
 }
 
 export default function Chat() {
@@ -26,6 +36,24 @@ export default function Chat() {
   const { chatId } = useParams<{chatId:string|undefined}>();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!chatId) return;
+
+    const loadMessages = async () => {
+      try {
+        const { data }: { data: { chat: ApiMessage[]; success: boolean } } =
+          await axios.get(`http://localhost:5000/api/v1/chat/${chatId}`, {
+            withCredentials: true,
+          });
+
+        setMessages(data.chat.toReversed().map(normalizeMessage));
+      } catch (error) {
+        console.error("Failed to load chat messages", error);
+      }
+    };
+
+    void loadMessages();
+  }, [chatId]);
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -112,18 +140,13 @@ export default function Chat() {
           }
           
           if (eventType === "sources") {
-            console.log("Sources:", data.sources);
-
             setMessages((prev) => [
               ...prev,
               {
                 id: assistantId,
                 role: "assistant",
                 content: "",
-                sources: data.sources.map((filename: string) => ({
-                  id: crypto.randomUUID(),
-                  filename,
-                })),
+                sources: data.sources,
               },
             ]);
           }

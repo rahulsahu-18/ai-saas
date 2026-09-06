@@ -1,8 +1,7 @@
 import { FileText } from "lucide-react";
-import type { Source } from "../../pages/chat/Chat";
 
 interface SourcesProps {
-  sources: Source[];
+  sources: string[];
 }
 
 export function Sources({ sources }: SourcesProps) {
@@ -21,9 +20,9 @@ export function Sources({ sources }: SourcesProps) {
 
       <div className="grid gap-2 sm:grid-cols-2">
 
-        {sources.map((source) => (
+        {sources.map((source, index) => (
           <button
-            key={source.id}
+            key={`${source}-${index}`}
             type="button"
             className="group rounded-xl border border-zinc-200 bg-white p-2 text-left transition hover:border-zinc-300 hover:shadow-sm"
           >
@@ -40,7 +39,7 @@ export function Sources({ sources }: SourcesProps) {
               <div className="min-w-0">
 
                 <p className="truncate text-xs font-semibold text-zinc-700">
-                  {source.filename}
+                  {source}
                 </p>
               </div>
             </div>
