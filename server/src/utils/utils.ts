@@ -1,5 +1,8 @@
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { fromNodeHeaders } from "better-auth/node";
 import mammoth from "mammoth"
+import { auth } from "../lib/auth.js";
+import { Request } from "express";
 
 interface IfunctionArgs {
   buffer: Buffer;
@@ -105,3 +108,11 @@ Rules:
 - Do not mention the retrieval process, embeddings, Pinecone, or internal implementation.
 - Do not include a Sources section in your answer. Sources are handled separately by the application.
 `;
+
+export const getAuthenticatedUserId = async (req: Request) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+
+  return session?.user.id;
+};

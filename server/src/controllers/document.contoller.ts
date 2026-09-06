@@ -4,20 +4,12 @@ import path from "node:path";
 
 import { getSupabase, supabase } from "../utils/superbase.js";
 import { prisma } from "../lib/prisma.js";
-import { getContentType, processDocument } from "../utils/utils.js";
+import { getAuthenticatedUserId, getContentType, processDocument } from "../utils/utils.js";
 import { chunkAndEmbading } from "../utils/rag.js";
-import { success } from "better-auth";
 import { pineconeIndex } from "../utils/pinecone.config.js";
-import { auth } from "../lib/auth.js";
-import { fromNodeHeaders } from "better-auth/node";
 
-const getAuthenticatedUserId = async (req: Request) => {
-  const session = await auth.api.getSession({
-    headers: fromNodeHeaders(req.headers),
-  });
 
-  return session?.user.id;
-};
+
 
 const ingestDocument = async (req: Request, res: Response) => {
   try {
@@ -80,18 +72,6 @@ const ingestDocument = async (req: Request, res: Response) => {
 
     // 7. Create storage path
     const filePath = `${userId}/${documentId}/${fileName}`;
-
-    // console.log("Uploading:", {
-    //   userId,
-    //   documentId,
-    //   filename,
-    //   mimetype: file.mimetype,
-    //   extension,
-    //   size: file.size,
-    //   filePath,
-    // });
-
-    // 8. Upload to Supabase
     const supabase = getSupabase();
 
     const { data, error } = await supabase.storage
@@ -149,7 +129,7 @@ const ingestDocument = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       chunkSize: result.chunks,
-      message: "document added to kb",
+      message: "document added to knowladge base",
     });
   } catch (error) {
     console.error("Ingest error:", error);

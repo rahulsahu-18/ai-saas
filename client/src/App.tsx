@@ -16,6 +16,7 @@ function App() {
         <Route path="/knowledge-bases" element={<KnowledgeBases />} />
         <Route path="/files" element={<MyFiles />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/chat/:chatId" element={<Chat />} /> 
       </Routes>
     </>
   );

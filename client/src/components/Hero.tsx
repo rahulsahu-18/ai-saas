@@ -4,6 +4,7 @@ import {
   FileText,
   MessageSquare,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Hero() {
   return (
@@ -33,15 +34,16 @@ export default function Hero() {
           </p>
 
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-
+           <Link to={"/chat"}>
             <button className="group flex h-11 items-center justify-center gap-2 rounded-lg bg-zinc-950 px-6 text-sm font-medium text-white transition hover:bg-zinc-800">
-              Start building
+              Get started
 
               <ArrowRight
                 size={16}
                 className="transition-transform group-hover:translate-x-0.5"
               />
             </button>
+           </Link>
 
             <button className="h-11 rounded-lg border border-zinc-200 bg-white px-6 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50">
               See how it works

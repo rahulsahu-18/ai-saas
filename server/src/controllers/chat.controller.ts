@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { vectorStore } from "../utils/pinecone.config.js";
 import { model } from "../utils/model.js";
-import { systemMessage } from "../utils/utils.js";
+import { getAuthenticatedUserId, systemMessage } from "../utils/utils.js";
 
 export const allChat = async (req: Request, res: Response) => {
   const userId = req.body.userId;
@@ -59,9 +59,9 @@ export const singleChat = async (req: Request, res: Response) => {
 };
 
 export const chat = async (req: Request, res: Response) => {
-   const { userId, message } = req.body;
+   const { message } = req.body;
   const chatId = req.params.id as string;
-
+  const userId = await getAuthenticatedUserId(req);
   let currentChatId = chatId;
 
   if (!userId) {

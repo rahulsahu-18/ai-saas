@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   Download,
   FileText,
@@ -6,13 +7,22 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 interface KnowledgeFile {
   id: string;
-  name: string;
-  type: "PDF" | "DOC" | "DOCX" | "TXT";
-  size: number;
-  uploadedAt: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number | null;
+  createdAt: string;
+}
+interface DeleteResponse{
+  status:number
+  message:string
+}
+interface KnowledgeFilesResponse {
+  success: boolean;
+  documents: KnowledgeFile[];
 }
 
 export default function MyFiles() {
@@ -22,28 +32,12 @@ export default function MyFiles() {
 
   useEffect(() => {
     const loadFiles = async () => {
-      const response = await fetch("http://localhost:5000/api/v1/get-all", {
-        credentials: "include",
-      });
-      const result = await response.json();
-
-      if (!response.ok) return;
-
-      setFiles(
-        result.documents.map((file: {
-          id: string;
-          fileName: string;
-          fileType: string;
-          fileSize: number | null;
-          createdAt: string;
-        }) => ({
-          id: file.id,
-          name: file.fileName,
-          type: file.fileType.toUpperCase(),
-          size: file.fileSize ?? 0,
-          uploadedAt: new Date(file.createdAt).toLocaleDateString(),
-        }))
+      const { data }: { data: KnowledgeFilesResponse } = await axios.get(
+        "http://localhost:5000/api/v1/get-all",
+        { withCredentials: true }
       );
+
+      setFiles(data.documents);
     };
 
     void loadFiles();
@@ -55,14 +49,11 @@ export default function MyFiles() {
     );
 
     if (!confirmed) return;
-
-    const response = await fetch(
-      `http://localhost:5000/api/v1/delete-document/${id}`,
-      { method: "DELETE", credentials: "include" }
-    );
-
-    if (response.ok) {
-      setFiles((prev) => prev.filter((file) => file.id !== id));
+    try {
+      const {data}:{data:DeleteResponse}= await axios.delete(`http://localhost:5000/api/v1/delete-document/${id}`,{withCredentials:true});
+      toast.success(data.message);
+    } catch (error) {
+      toast.error("something went worng while delete the file")
     }
   };
 
@@ -89,9 +80,7 @@ export default function MyFiles() {
   };
 
   const filteredFiles = files.filter((file) =>
-    file.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
+    file.fileName.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -124,7 +113,7 @@ export default function MyFiles() {
 
           {/* Upload */}
           <a
-            href="/knowledge-base"
+            href="/knowledge-bases"
             className="inline-flex h-10 items-center justify-center rounded-lg bg-zinc-950 px-4 text-sm font-medium text-white transition hover:bg-zinc-800"
           >
             Add document
@@ -203,23 +192,23 @@ function FileCard({
         <div className="min-w-0">
 
           <p
-            title={file.name}
+            title={file.fileName}
             className="truncate text-sm font-medium text-zinc-900"
           >
-            {file.name}
+            {file.fileName}
           </p>
 
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
 
-            <span>{file.type}</span>
+            <span>{file.fileType.toUpperCase()}</span>
 
             <span className="h-1 w-1 rounded-full bg-zinc-300" />
 
-            <span>{formatFileSize(file.size)}</span>
+            <span>{formatFileSize(file.fileSize ?? 0)}</span>
 
             <span className="h-1 w-1 rounded-full bg-zinc-300" />
 
-            <span>{file.uploadedAt}</span>
+            <span>{new Date(file.createdAt).toLocaleDateString()}</span>
 
           </div>
 
@@ -245,7 +234,7 @@ function FileCard({
           type="button"
           onClick={() => onDelete(file.id)}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-          aria-label={`Delete ${file.name}`}
+          aria-label={`Delete ${file.fileName}`}
         >
           <Trash2 size={16} />
         </button>
@@ -305,7 +294,7 @@ function EmptyState({
       </p>
 
       <a
-        href="/knowledge-base"
+        href="/knowledge-bases"
         className="mt-6 inline-flex h-10 items-center rounded-lg bg-zinc-950 px-4 text-sm font-medium text-white transition hover:bg-zinc-800"
       >
         Add document

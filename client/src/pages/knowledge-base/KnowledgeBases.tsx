@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
+  ArrowLeft,
   ArrowUp,
   CheckCircle2,
   FileText,
@@ -7,18 +9,22 @@ import {
   Loader2,
   X,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-const ACCEPTED_FILE_TYPES = [
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".txt",
-];
+const ACCEPTED_FILE_TYPES = [".pdf", ".doc", ".docx", ".txt"];
+
+type IngestResponse = {
+  success: boolean;
+  chunkSize: number;
+  message: string;
+};
 
 export default function KnowledgeBase() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -52,9 +58,7 @@ export default function KnowledgeBase() {
     setSelectedFile(file);
   };
 
-  const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (file) {
@@ -65,9 +69,7 @@ export default function KnowledgeBase() {
     event.target.value = "";
   };
 
-  const handleDrop = (
-    event: React.DragEvent<HTMLDivElement>
-  ) => {
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
 
     const file = event.dataTransfer.files?.[0];
@@ -91,25 +93,20 @@ export default function KnowledgeBase() {
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
-
-      const response = await fetch("http://localhost:5000/api/v1/ingest", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error ?? "Upload failed");
-      }
-
+      const { data }: { data: IngestResponse } = await axios.post(
+        "http://localhost:5000/api/v1/ingest",
+        formData,
+        { withCredentials: true },
+      );
       setSelectedFile(null);
+      toast.success(data.message);
     } catch (uploadError) {
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Something went wrong while uploading the file."
+          : "Something went wrong while uploading the file.",
       );
+      toast.error("something went worng to upload file");
     } finally {
       setIsUploading(false);
     }
@@ -118,10 +115,17 @@ export default function KnowledgeBase() {
   return (
     <main className="min-h-screen bg-[#fafafa] text-zinc-950">
       <div className="mx-auto max-w-5xl px-5 py-10 lg:px-8">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+        >
+          <ArrowLeft size={16} />
+          Go back
+        </button>
 
         {/* Header */}
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-
           <div>
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
@@ -138,8 +142,8 @@ export default function KnowledgeBase() {
             </h1>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-500">
-              Upload documents to your knowledge base and use
-              them to get answers from your AI assistant.
+              Upload documents to your knowledge base and use them to get
+              answers from your AI assistant.
             </p>
           </div>
 
@@ -153,12 +157,10 @@ export default function KnowledgeBase() {
             <Files size={16} />
             See my files
           </button>
-
         </div>
 
         {/* Upload area */}
         <section className="mt-10">
-
           {!selectedFile ? (
             <div
               onDragOver={(event) => event.preventDefault()}
@@ -166,12 +168,8 @@ export default function KnowledgeBase() {
               onClick={() => fileInputRef.current?.click()}
               className="group flex min-h-[360px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center transition hover:border-zinc-400 hover:bg-zinc-50"
             >
-
               <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 transition group-hover:bg-white">
-                <ArrowUp
-                  size={23}
-                  className="text-zinc-600"
-                />
+                <ArrowUp size={23} className="text-zinc-600" />
               </div>
 
               <h2 className="mt-6 text-base font-semibold">
@@ -204,22 +202,15 @@ export default function KnowledgeBase() {
                 onChange={handleFileChange}
                 className="hidden"
               />
-
             </div>
           ) : (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6">
-
               <div className="flex items-center gap-4">
-
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                  <FileText
-                    size={21}
-                    className="text-zinc-600"
-                  />
+                  <FileText size={21} className="text-zinc-600" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-
                   <p className="truncate text-sm font-semibold text-zinc-900">
                     {selectedFile.name}
                   </p>
@@ -227,7 +218,6 @@ export default function KnowledgeBase() {
                   <p className="mt-1 text-xs text-zinc-400">
                     {formatFileSize(selectedFile.size)}
                   </p>
-
                 </div>
 
                 <button
@@ -238,11 +228,9 @@ export default function KnowledgeBase() {
                 >
                   <X size={17} />
                 </button>
-
               </div>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-
                 <button
                   type="button"
                   onClick={handleRemove}
@@ -260,10 +248,7 @@ export default function KnowledgeBase() {
                 >
                   {isUploading ? (
                     <>
-                      <Loader2
-                        size={16}
-                        className="animate-spin"
-                      />
+                      <Loader2 size={16} className="animate-spin" />
                       Uploading...
                     </>
                   ) : (
@@ -273,30 +258,19 @@ export default function KnowledgeBase() {
                     </>
                   )}
                 </button>
-
               </div>
-
             </div>
           )}
 
           {/* Error */}
-          {error && (
-            <p className="mt-3 text-sm text-red-600">
-              {error}
-            </p>
-          )}
-
+          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         </section>
 
         {/* Supported files */}
         <section className="mt-12">
-
-          <h2 className="text-sm font-semibold">
-            Supported files
-          </h2>
+          <h2 className="text-sm font-semibold">Supported files</h2>
 
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-
             {[
               ["PDF", "Portable Document Format"],
               ["DOC", "Microsoft Word"],
@@ -311,24 +285,17 @@ export default function KnowledgeBase() {
                   {extension}
                 </div>
 
-                <p className="mt-3 text-sm font-medium">
-                  {extension}
-                </p>
+                <p className="mt-3 text-sm font-medium">{extension}</p>
 
-                <p className="mt-1 text-xs text-zinc-400">
-                  {description}
-                </p>
+                <p className="mt-1 text-xs text-zinc-400">{description}</p>
               </div>
             ))}
-
           </div>
 
           <p className="mt-4 text-xs text-zinc-400">
             Maximum file size is 10 MB per document.
           </p>
-
         </section>
-
       </div>
     </main>
   );
