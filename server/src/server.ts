@@ -7,6 +7,8 @@ import document from "./routes/document.routes.js";
 import api from "./routes/api.routes.js";
 import chatRouter from "./routes/chat.routes.js";
 import creditRouter from "./routes/credit.routes.js";
+import websiteRouter from "./routes/website.routes.js";
+import youtubeRoutes from "./routes/youtube.routes.js";
 const app = express();
 
 app.use(
@@ -23,6 +25,8 @@ app.use('/api/v1',document);
 app.use('/api/v1',chatRouter);
 app.use('/api/v1', api);
 app.use('/api/v1', creditRouter);
+app.use('/api/v1', websiteRouter);
+app.use('/api/v1', youtubeRoutes);
 app.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
 });

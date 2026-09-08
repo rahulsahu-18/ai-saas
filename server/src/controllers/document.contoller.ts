@@ -147,7 +147,6 @@ const ingestDocument = async (req: Request, res: Response) => {
         fileType,
         fileSize: file.size,
         storagePath: filePath,
-        status: "PROCESSING",
       },
     });
 
@@ -168,6 +167,7 @@ const ingestDocument = async (req: Request, res: Response) => {
       text,
       userId,
       documentId,
+      sourceType:'FILE'
     });
 
     return res.status(200).json({
@@ -248,7 +248,7 @@ const deleteDocument = async (req: Request, res: Response) => {
       await supabaseClient.storage
         .from("documents")
         .remove([
-          document.storagePath,
+          document.storagePath as string,
         ]);
 
     if (storageError) {
@@ -259,6 +259,7 @@ const deleteDocument = async (req: Request, res: Response) => {
 
     await pineconeIndex.deleteMany({
       documentId: document.id,
+      userId
     });
 
     await prisma.document.delete({

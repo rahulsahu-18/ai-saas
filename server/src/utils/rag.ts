@@ -10,11 +10,16 @@ export async function chunkAndEmbading({
   text,
   userId,
   documentId,
+  sourceType,
+  sourceUrl,
+
 }: {
   fileName: string;
   text: string;
   userId: string;
   documentId: string;
+  sourceType: 'FILE' | 'WEBSITE' | 'YOUTUBE';
+  sourceUrl?:string;
 }) {
   const chunks = await splitter.createDocuments(
     [text],
@@ -23,12 +28,11 @@ export async function chunkAndEmbading({
         userId,
         documentId,
         fileName,
+        sourceType,
+        sourceUrl,
       },
     ],
   );
- 
-  // create vector embading
-
    await vectorStore.addDocuments(chunks);
  return {chunks:chunks.length};
 }

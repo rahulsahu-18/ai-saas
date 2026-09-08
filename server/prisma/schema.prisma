@@ -101,9 +101,10 @@ model Document {
   fileType String
   fileSize Int?
 
-  storagePath String
+  storagePath String?
 
-  status DocumentStatus @default(PROCESSING)
+  sourceType  DocumentSourceType @default(FILE)
+  sourceUrl   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,11 +113,10 @@ model Document {
 
   @@index([userId])
 }
-
-enum DocumentStatus {
-  PROCESSING
-  COMPLETED
-  FAILED
+enum DocumentSourceType {
+  FILE
+  WEBSITE
+  YOUTUBE
 }
 
 enum ApiProviders {
