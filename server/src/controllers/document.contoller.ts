@@ -8,6 +8,7 @@ import { getAuthenticatedUserId, getContentType, processDocument } from "../util
 import { chunkAndEmbading } from "../utils/rag.js";
 import { pineconeIndex } from "../utils/pinecone.config.js";
 
+const DOCUMENT_CREDIT_COST = 2;
 
 
 
@@ -37,6 +38,7 @@ const ingestDocument = async (req: Request, res: Response) => {
 
     const extension = path.extname(file.originalname).toLowerCase();
     const fileType = getContentType(extension);
+    
     if (!allowedExtensions.includes(extension)) {
       return res.status(400).json({
         success: false,
@@ -95,6 +97,48 @@ const ingestDocument = async (req: Request, res: Response) => {
         details: error.message,
       });
     }
+
+    const charged = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.creditAccount.updateMany({
+        where: {
+          userId,
+          balance: {
+            gte: DOCUMENT_CREDIT_COST,
+          },
+        },
+        data: {
+          balance: {
+            decrement: DOCUMENT_CREDIT_COST,
+          },
+        },
+      });
+
+      if (result.count === 0) {
+        return false;
+      }
+
+      await transaction.creditTransaction.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId,
+          amount: -DOCUMENT_CREDIT_COST,
+          type: "USAGE",
+          description: `Document upload: ${fileName}`,
+        },
+      });
+
+      return true;
+    });
+
+    if (!charged) {
+      await supabase.storage.from("documents").remove([filePath]);
+
+      return res.status(402).json({
+        success: false,
+        error: "Insufficient credits. Uploading a document requires 2 credits.",
+      });
+    }
+
     const document = await prisma.document.create({
       data: {
         id: documentId,

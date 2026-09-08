@@ -4,6 +4,7 @@ import { ChatSidebar, LoadingMessage } from "../../components/chat/chatSidebar";
 import { MessageBubble } from "../../components/chat/MessageBubble";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import { notifyCreditsUpdated } from "../../components/CreditBalance";
 
 export interface Message {
   id: string;
@@ -92,7 +93,8 @@ export default function Chat() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to send message");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message ?? "Failed to send message");
       }
 
       if (!response.body) {
@@ -169,7 +171,12 @@ export default function Chat() {
             );
           }
           if (eventType === "done") {
+            notifyCreditsUpdated();
             console.log("Streaming completed");
+          }
+
+          if (eventType === "error") {
+            throw new Error(data.message ?? "Unable to complete chat");
           }
         }
       }
@@ -255,7 +262,8 @@ export default function Chat() {
             </div>
 
             <p className="mt-2 text-center text-[11px] text-zinc-400">
-              Answers are generated from your uploaded documents.
+              Each question uses 1 credit. Answers are generated from
+              your uploaded documents.
             </p>
           </form>
         </div>

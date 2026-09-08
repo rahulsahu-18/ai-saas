@@ -1,7 +1,8 @@
 import axios from "axios";
-import { FileText, Sparkles, Trash2 } from "lucide-react";
+import { FileText, Sparkles, Tag, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import CreditBalance from "../CreditBalance";
 
 interface ChatSummary {
     id: string;
@@ -94,6 +95,14 @@ export function ChatSidebar() {
           Chat
         </Link>
 
+        <Link
+          to="/pricing"
+          className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
+        >
+          <Tag size={17} />
+          Pricing
+        </Link>
+
         <div className="mt-5">
           <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Recent chats
@@ -146,6 +155,8 @@ export function ChatSidebar() {
 
       {/* Bottom */}
       <div className="border-t border-zinc-200 p-3">
+
+        <CreditBalance />
 
         <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900">
           Settings

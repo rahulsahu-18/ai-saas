@@ -5,6 +5,7 @@ import Register from "./pages/auth/Register";
 import KnowledgeBases from "./pages/knowledge-base/KnowledgeBases";
 import MyFiles from "./pages/knowledge-base/Myfiles";
 import Chat from "./pages/chat/Chat";
+import Pricing from "./pages/Pricing";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/files" element={<MyFiles />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/chat/:chatId" element={<Chat />} /> 
+        <Route path="/pricing" element={<Pricing />} />
       </Routes>
     </>
   );

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import CreditBalance, { notifyCreditsUpdated } from "../../components/CreditBalance";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -99,14 +100,16 @@ export default function KnowledgeBase() {
         { withCredentials: true },
       );
       setSelectedFile(null);
+      notifyCreditsUpdated();
       toast.success(data.message);
     } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
+      const message = axios.isAxiosError(uploadError)
+        ? uploadError.response?.data?.error
+        : uploadError instanceof Error
           ? uploadError.message
-          : "Something went wrong while uploading the file.",
-      );
-      toast.error("something went worng to upload file");
+          : "Something went wrong while uploading the file.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -145,6 +148,9 @@ export default function KnowledgeBase() {
               Upload documents to your knowledge base and use them to get
               answers from your AI assistant.
             </p>
+            <p className="mt-3 text-xs font-medium text-zinc-500">
+              Uploading a document uses 2 credits.
+            </p>
           </div>
 
           {/* See all files */}
@@ -157,6 +163,7 @@ export default function KnowledgeBase() {
             <Files size={16} />
             See my files
           </button>
+          <CreditBalance />
         </div>
 
         {/* Upload area */}

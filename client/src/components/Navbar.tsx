@@ -1,12 +1,33 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Coins } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { authClient } from "../utils/auth-client";
 import { UserAvatar } from "../utils/utils";
 
 export default function Navbar() {
   const { data: session, isPending } = authClient.useSession();
-  if(isPending)
-  {
+  const [credits, setCredits] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!session?.user.id) {
+      setCredits(null);
+      return;
+    }
+
+    const storageKey = `knowbase-credits-${session.user.id}`;
+    const savedCredits = window.localStorage.getItem(storageKey);
+
+    if (savedCredits === null) {
+      window.localStorage.setItem(storageKey, "10");
+      setCredits(10);
+      return;
+    }
+
+    const parsedCredits = Number(savedCredits);
+    setCredits(Number.isFinite(parsedCredits) ? parsedCredits : 10);
+  }, [session?.user.id]);
+
+  if (isPending) {
     return null;
   }
   return (
@@ -40,7 +61,7 @@ export default function Navbar() {
           </a>
 
           <a
-            href="#pricing"
+            href="/pricing"
             className="text-sm text-zinc-600 transition-colors hover:text-zinc-950"
           >
             Pricing
@@ -48,7 +69,16 @@ export default function Navbar() {
         </nav>
 
         {session ? (
-          <UserAvatar image={session.user.image} name={session.user.name} />
+          <div className="flex items-center gap-3">
+            <Link
+              to="/pricing"
+              className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
+            >
+              <Coins size={16} className="text-zinc-500" />
+              {credits ?? 10} credits
+            </Link>
+            <UserAvatar image={session.user.image} name={session.user.name} />
+          </div>
         ) : (
           <div className="flex items-center gap-3">
             <Link to={"/login"}>
