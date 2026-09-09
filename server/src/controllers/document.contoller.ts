@@ -201,8 +201,8 @@ const getAllDocuments = async (req: Request, res: Response) => {
         id: true,
         fileName: true,
         fileType: true,
+        sourceType:true,
         fileSize: true,
-        status: true,
         createdAt: true,
       },
     });
@@ -212,6 +212,7 @@ const getAllDocuments = async (req: Request, res: Response) => {
       documents,
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({
       success: false,
       error: "Failed to fetch documents",

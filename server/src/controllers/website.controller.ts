@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import crypto from "node:crypto";
 import { getAuthenticatedUserId } from "../utils/utils.js";
 import { checkWebsite, getTextData } from "../utils/wesite.service.js";
 import { chunkAndEmbading } from "../utils/rag.js";
@@ -7,8 +8,7 @@ import { pineconeIndex } from "../utils/pinecone.config.js";
 
 export const ingestWebData = async (req:Request,res:Response) => {
     const url = req.body.url as string;
-    // const userId = await getAuthenticatedUserId(req);
-    const userId = req.body.userId;
+    const userId = await getAuthenticatedUserId(req);
     if(!userId)
     {
         return res.status(500).json({success:false,message:"forbidden request"});
@@ -21,7 +21,6 @@ export const ingestWebData = async (req:Request,res:Response) => {
          return res.status(400).json({success:false,message:"give a valid website link"});
     try {
         // creadit check
-
         const {text,title} = await getTextData(url);
         const documentId = crypto.randomUUID();
         await chunkAndEmbading({userId,text,fileName:title,documentId,sourceType:'WEBSITE',sourceUrl:url});
@@ -36,19 +35,24 @@ export const ingestWebData = async (req:Request,res:Response) => {
 
 export const deletewebData =  async (req:Request,res:Response) => {
   const userId = await getAuthenticatedUserId(req);
-// const userId = req.body.userId;
   const documentId = req.body.id as string;
-  if(!documentId) {
-    return res.status(400).json({success:true,message:'forbiden request'});
+  
+  if (!userId) {
+    return res.status(401).json({success:false,message:'unauthorized request'});
   }
+  
+  if(!documentId) {
+    return res.status(400).json({success:false,message:'document id is required'});
+  }
+  
   try {
         await pineconeIndex.deleteMany({
           documentId,
           userId
         });
-        await prisma.document.delete({where:{id:documentId}});
+        await prisma.document.delete({where:{id:documentId,userId}});
         return res.status(200).json({success:true,message:'delete data successfully'});
   } catch (error) {
-    return res.status(400).json({success:true,message:'error while delete data'});
+    return res.status(400).json({success:false,message:'error while delete data'});
   }
 }

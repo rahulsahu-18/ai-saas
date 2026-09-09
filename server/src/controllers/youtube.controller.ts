@@ -1,13 +1,18 @@
 import { Request, Response } from "express";
+import crypto from "node:crypto";
 import { extractYoutubeVideoId, getYoutubeTranscript } from "../utils/youtube.service.js";
-import { success } from "better-auth";
 import { prisma } from "../lib/prisma.js";
 import { chunkAndEmbading } from "../utils/rag.js";
 import { pineconeIndex } from "../utils/pinecone.config.js";
+import { getAuthenticatedUserId } from "../utils/utils.js";
 
 export const ingestYoutubeData = async (req:Request,res:Response) => {
-    const userId = req.body.userId;
+    const userId = await getAuthenticatedUserId(req);
     const url = req.body.url;
+
+    if (!userId) {
+        return res.status(401).json({success:false,message:"unauthorized request"});
+    }
 
     // check url from yt or not 
     const videoId = extractYoutubeVideoId(url);
@@ -23,13 +28,17 @@ export const ingestYoutubeData = async (req:Request,res:Response) => {
          return res.status(200).json({success:true,message:"youtube data added successfully"});
      } catch (error) {
         console.log(error);
-        return res.status(200).json({success:true,message:"something went worng while add yt data"});
+        return res.status(500).json({success:false,message:"something went wrong while adding yt data"});
      }
 }
 
 export const deleteYoutubeData = async (req:Request,res:Response) => {
-     const userId = req.body.userId;
+     const userId = await getAuthenticatedUserId(req);
      const id = req.body.id;
+
+     if (!userId) {
+         return res.status(401).json({success:false,message:"unauthorized request"});
+     }
 
      try {
         await prisma.document.delete({where:{id,userId}});
