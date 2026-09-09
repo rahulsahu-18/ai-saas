@@ -6,6 +6,8 @@ import { chunkAndEmbading } from "../utils/rag.js";
 import { pineconeIndex } from "../utils/pinecone.config.js";
 import { getAuthenticatedUserId } from "../utils/utils.js";
 
+const DOCUMENT_CREDIT_COST = 2; 
+
 export const ingestYoutubeData = async (req:Request,res:Response) => {
     const userId = await getAuthenticatedUserId(req);
     const url = req.body.url;
@@ -13,23 +15,75 @@ export const ingestYoutubeData = async (req:Request,res:Response) => {
     if (!userId) {
         return res.status(401).json({success:false,message:"unauthorized request"});
     }
-
     // check url from yt or not 
     const videoId = extractYoutubeVideoId(url);
     if(!videoId) {
         return res.status(400).json({success:false,message:"invalid youtube video url"});
     }
-    // check creadit
-     try {
-         const {text,title} = await getYoutubeTranscript(url);
-         const documentId = crypto.randomUUID();
-         await prisma.document.create({data:{id:documentId,fileName:title,userId,sourceType:'YOUTUBE',fileType:'youtube video'}});
-         await chunkAndEmbading({userId,text,documentId,fileName:title,sourceType:'YOUTUBE',sourceUrl:url});
-         return res.status(200).json({success:true,message:"youtube data added successfully"});
-     } catch (error) {
+    
+    try {
+        const {text,title} = await getYoutubeTranscript(url);
+        const documentId = crypto.randomUUID();
+        
+        // Check credits and perform operations in transaction
+        const charged = await prisma.$transaction(async (transaction) => {
+          const result = await transaction.creditAccount.updateMany({
+            where: {
+              userId,
+              balance: {
+                gte: DOCUMENT_CREDIT_COST,
+              },
+            },
+            data: {
+              balance: {
+                decrement: DOCUMENT_CREDIT_COST,
+              },
+            },
+          });
+    
+          if (result.count === 0) {
+            return false;
+          }
+
+          // Create credit transaction record
+          await transaction.creditTransaction.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId,
+              amount: -DOCUMENT_CREDIT_COST,
+              type: "USAGE",
+              description: `youtube video upload: ${title}`,
+            },
+          });
+
+          // Create document record
+          await transaction.document.create({
+            data: {
+              id: documentId,
+              fileName: title,
+              userId,
+              sourceType: 'YOUTUBE',
+              fileType: 'youtube video'
+            }
+          });
+
+          return true;
+        });
+
+        if (!charged) {
+          return res.status(402).json({
+            success: false,
+            message: "Insufficient credits. Uploading a YouTube video requires 2 credits.",
+          });
+        }
+
+        // Process embeddings after transaction
+        await chunkAndEmbading({userId,text,documentId,fileName:title,sourceType:'YOUTUBE',sourceUrl:url});
+        return res.status(200).json({success:true,message:"youtube data added successfully"});
+    } catch (error) {
         console.log(error);
         return res.status(500).json({success:false,message:"something went wrong while adding yt data"});
-     }
+    }
 }
 
 export const deleteYoutubeData = async (req:Request,res:Response) => {

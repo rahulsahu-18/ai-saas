@@ -32,7 +32,43 @@ const ingestDocument = async (req: Request, res: Response) => {
         error: "User ID is required",
       });
     }
+     const charged = await prisma.$transaction(async (transaction) => {
+      const result = await transaction.creditAccount.updateMany({
+        where: {
+          userId,
+          balance: {
+            gte: DOCUMENT_CREDIT_COST,
+          },
+        },
+        data: {
+          balance: {
+            decrement: DOCUMENT_CREDIT_COST,
+          },
+        },
+      });
 
+      if (result.count === 0) {
+        return false;
+      }
+
+      await transaction.creditTransaction.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId,
+          amount: -DOCUMENT_CREDIT_COST,
+          type: "USAGE",
+          description: `Document upload: ${fileName}`,
+        },
+      });
+
+      return true;
+    });
+    if (!charged) {
+      return res.status(402).json({
+        success: false,
+        error: "Insufficient credits. Uploading a document requires 2 credits.",
+      });
+    }
     // 3. Allowed extensions
     const allowedExtensions = [".pdf", ".docx", ".txt"];
 
@@ -90,52 +126,11 @@ const ingestDocument = async (req: Request, res: Response) => {
     // 9. Supabase error
     if (error) {
       console.error("Supabase upload error:", error);
-
+      await supabase.storage.from("documents").remove([filePath]);
       return res.status(500).json({
         success: false,
         error: "Failed to upload file",
         details: error.message,
-      });
-    }
-
-    const charged = await prisma.$transaction(async (transaction) => {
-      const result = await transaction.creditAccount.updateMany({
-        where: {
-          userId,
-          balance: {
-            gte: DOCUMENT_CREDIT_COST,
-          },
-        },
-        data: {
-          balance: {
-            decrement: DOCUMENT_CREDIT_COST,
-          },
-        },
-      });
-
-      if (result.count === 0) {
-        return false;
-      }
-
-      await transaction.creditTransaction.create({
-        data: {
-          id: crypto.randomUUID(),
-          userId,
-          amount: -DOCUMENT_CREDIT_COST,
-          type: "USAGE",
-          description: `Document upload: ${fileName}`,
-        },
-      });
-
-      return true;
-    });
-
-    if (!charged) {
-      await supabase.storage.from("documents").remove([filePath]);
-
-      return res.status(402).json({
-        success: false,
-        error: "Insufficient credits. Uploading a document requires 2 credits.",
       });
     }
 

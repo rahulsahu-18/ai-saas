@@ -38,6 +38,7 @@
     "multer": "^2.3.0",
     "pdfjs-dist": "^6.3.289",
     "pg": "^8.23.0",
+    "razorpay": "^2.9.8",
     "remove-markdown": "^0.7.0",
     "youtube-transcript-plus": "^2.0.1"
   },

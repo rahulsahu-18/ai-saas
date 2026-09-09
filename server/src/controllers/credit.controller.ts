@@ -74,3 +74,7 @@ export const getAllCreditTransactions = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const addCreadit = async (req:Request,res:Response) => {
+  
+}

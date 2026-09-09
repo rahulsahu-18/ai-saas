@@ -9,6 +9,7 @@ import chatRouter from "./routes/chat.routes.js";
 import creditRouter from "./routes/credit.routes.js";
 import websiteRouter from "./routes/website.routes.js";
 import youtubeRoutes from "./routes/youtube.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 const app = express();
 
 app.use(
@@ -27,6 +28,7 @@ app.use('/api/v1', api);
 app.use('/api/v1', creditRouter);
 app.use('/api/v1', websiteRouter);
 app.use('/api/v1', youtubeRoutes);
+app.use('/api/v1/payment', paymentRoutes);
 app.listen(5000, () => {
   console.log("Server running on http://localhost:5000");
 });

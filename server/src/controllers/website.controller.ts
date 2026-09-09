@@ -6,6 +6,8 @@ import { chunkAndEmbading } from "../utils/rag.js";
 import { prisma } from "../lib/prisma.js";
 import { pineconeIndex } from "../utils/pinecone.config.js";
 
+const DOCUMENT_CREDIT_COST = 2;
+
 export const ingestWebData = async (req:Request,res:Response) => {
     const url = req.body.url as string;
     const userId = await getAuthenticatedUserId(req);
@@ -20,9 +22,58 @@ export const ingestWebData = async (req:Request,res:Response) => {
     if(!isValid)
          return res.status(400).json({success:false,message:"give a valid website link"});
     try {
-        // creadit check
         const {text,title} = await getTextData(url);
         const documentId = crypto.randomUUID();
+                const charged = await prisma.$transaction(async (transaction) => {
+                  const result = await transaction.creditAccount.updateMany({
+                    where: {
+                      userId,
+                      balance: {
+                        gte: DOCUMENT_CREDIT_COST,
+                      },
+                    },
+                    data: {
+                      balance: {
+                        decrement: DOCUMENT_CREDIT_COST,
+                      },
+                    },
+                  });
+            
+                  if (result.count === 0) {
+                    return false;
+                  }
+        
+                  // Create credit transaction record
+                  await transaction.creditTransaction.create({
+                    data: {
+                      id: crypto.randomUUID(),
+                      userId,
+                      amount: -DOCUMENT_CREDIT_COST,
+                      type: "USAGE",
+                      description: `youtube video upload: ${title}`,
+                    },
+                  });
+        
+                  // Create document record
+                  await transaction.document.create({
+                    data: {
+                      id: documentId,
+                      fileName: title,
+                      userId,
+                      sourceType: 'YOUTUBE',
+                      fileType: 'youtube video'
+                    }
+                  });
+        
+                  return true;
+                });
+        
+                if (!charged) {
+                  return res.status(402).json({
+                    success: false,
+                    error: "Insufficient credits. Uploading a YouTube video requires 2 credits.",
+                  });
+                }
         await chunkAndEmbading({userId,text,fileName:title,documentId,sourceType:'WEBSITE',sourceUrl:url});
         await prisma.document.create({data:{userId,fileName:title,id:documentId,sourceType:"WEBSITE",fileType:'webData'}});
         return res.status(200).json({success:true,message:'data added successfully',documentId});
