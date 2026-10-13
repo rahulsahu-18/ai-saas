@@ -1,51 +1,18 @@
-import axios from "axios";
 import { FileText, Sparkles, Tag, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import CreditBalance from "../CreditBalance";
-
-interface ChatSummary {
-    id: string;
-    title: string | null;
-}
-
-interface SidebarResponse {
-  chats: ChatSummary[];
-  success: boolean;
-}
+import { useDeleteChatMutation, useGetChatsQuery } from "../../store/rtkquery/api";
 
 export function ChatSidebar() {
-  const [chatSidebar, setChatSidebar] = useState<ChatSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useGetChatsQuery();
+  const [deleteChat] = useDeleteChatMutation();
+  const chatSidebar = data?.chats ?? [];
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function loadChat() {
-      try {
-        const { data }: { data: SidebarResponse } = await axios.get(
-          "http://localhost:5000/api/v1/chat/all-chat",
-          { withCredentials: true },
-        );
-        setChatSidebar(data.chats);
-      } catch (error) {
-        console.error("Failed to load chats", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void loadChat();
-  }, []);
-
   async function handleDelete(chatId: string) {
     try {
-      await axios.delete(`http://localhost:5000/api/v1/chat/${chatId}`, {
-        withCredentials: true,
-      });
-      setChatSidebar((previousChats) =>
-        previousChats.filter((chat) => chat.id !== chatId),
-      );
+      await deleteChat(chatId).unwrap();
 
       if (location.pathname === `/chat/${chatId}`) {
         navigate("/chat");

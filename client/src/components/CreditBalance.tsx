@@ -1,47 +1,36 @@
-import axios from "axios";
+import { useEffect } from "react";
 import { Coins } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useGetCreditBalanceQuery } from "../store/rtkquery/api";
+import { useAuth } from "./auth/AuthProvider";
 
-const CREDIT_UPDATED_EVENT = "credits-updated";
-
-export function notifyCreditsUpdated() {
-  window.dispatchEvent(new Event(CREDIT_UPDATED_EVENT));
-}
+export const notifyCreditsUpdated = () => {
+  window.dispatchEvent(new CustomEvent("credit-balance-updated"));
+};
 
 export default function CreditBalance() {
-  const [balance, setBalance] = useState<number | null>(null);
+  const { isAuthenticated } = useAuth();
+  const { data, refetch } = useGetCreditBalanceQuery(undefined, {
+    skip: !isAuthenticated,
+  });
 
   useEffect(() => {
-    let active = true;
+    if (!isAuthenticated) return;
 
-    const loadBalance = async () => {
-      try {
-        const { data }: { data: { balance: number } } = await axios.get(
-          "http://localhost:5000/api/v1/credit/balance",
-          { withCredentials: true },
-        );
-
-        if (active) {
-          setBalance(data.balance);
-        }
-      } catch (error) {
-        console.error("Failed to load credit balance", error);
-      }
+    const handleCreditsUpdated = () => {
+      void refetch();
     };
 
-    void loadBalance();
-    window.addEventListener(CREDIT_UPDATED_EVENT, loadBalance);
+    window.addEventListener("credit-balance-updated", handleCreditsUpdated);
 
     return () => {
-      active = false;
-      window.removeEventListener(CREDIT_UPDATED_EVENT, loadBalance);
+      window.removeEventListener("credit-balance-updated", handleCreditsUpdated);
     };
-  }, []);
+  }, [isAuthenticated, refetch]);
 
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
-      <Coins size={16} />
-      <span>{balance === null ? "Credits" : `${balance} credits`}</span>
+    <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2.5 text-sm font-medium text-zinc-700">
+      <Coins size={16} className="text-zinc-500" />
+      <span>{data ? `${data.balance} credits` : "Credits"}</span>
     </div>
   );
 }

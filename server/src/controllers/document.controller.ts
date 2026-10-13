@@ -23,6 +23,11 @@ const ingestDocument = async (req: Request, res: Response) => {
       });
     }
 
+    const fileName = file.originalname.replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_",
+    ) as string;
+
     // 2. Get user ID
     const userId = await getAuthenticatedUserId(req);
 
@@ -102,13 +107,7 @@ const ingestDocument = async (req: Request, res: Response) => {
     // 5. Create document ID
     const documentId = crypto.randomUUID();
 
-    // 6. Sanitize filename
-    const fileName = file.originalname.replace(
-      /[^a-zA-Z0-9._-]/g,
-      "_",
-    ) as string;
-
-    // 7. Create storage path
+    // 6. Create storage path
     const filePath = `${userId}/${documentId}/${fileName}`;
     const supabase = getSupabase();
 

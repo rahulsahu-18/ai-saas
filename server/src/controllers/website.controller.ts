@@ -50,7 +50,7 @@ export const ingestWebData = async (req:Request,res:Response) => {
                       userId,
                       amount: -DOCUMENT_CREDIT_COST,
                       type: "USAGE",
-                      description: `youtube video upload: ${title}`,
+                      description: `Website upload: ${title}`,
                     },
                   });
         
@@ -60,8 +60,9 @@ export const ingestWebData = async (req:Request,res:Response) => {
                       id: documentId,
                       fileName: title,
                       userId,
-                      sourceType: 'YOUTUBE',
-                      fileType: 'youtube video'
+                      sourceType: "WEBSITE",
+                      fileType: "webData",
+                      sourceUrl: url,
                     }
                   });
         
@@ -71,11 +72,10 @@ export const ingestWebData = async (req:Request,res:Response) => {
                 if (!charged) {
                   return res.status(402).json({
                     success: false,
-                    error: "Insufficient credits. Uploading a YouTube video requires 2 credits.",
+                    error: "Insufficient credits. Uploading a website requires 2 credits.",
                   });
                 }
         await chunkAndEmbading({userId,text,fileName:title,documentId,sourceType:'WEBSITE',sourceUrl:url});
-        await prisma.document.create({data:{userId,fileName:title,id:documentId,sourceType:"WEBSITE",fileType:'webData'}});
         return res.status(200).json({success:true,message:'data added successfully',documentId});
     } catch (error) {
         console.log(error);

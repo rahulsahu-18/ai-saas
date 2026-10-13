@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middleware/upload.js";
-import { deleteDocument, getAllDocuments, ingestDocument } from "../controllers/document.contoller.js";
+import { deleteDocument, getAllDocuments, ingestDocument } from "../controllers/document.controller.js";
 
 const document = express.Router();
 
