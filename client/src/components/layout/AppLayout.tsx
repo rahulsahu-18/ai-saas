@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   Trash2,
+  ReceiptText,
 } from 'lucide-react';
 import UserMenu from './UserMenu';
 import CreditBalance from '../CreditBalance';
@@ -19,6 +20,7 @@ const navItems = [
   { to: '/knowledge-bases', icon: FolderPlus, label: 'Knowledge Base' },
   { to: '/files', icon: FileText, label: 'My Files' },
   { to: '/pricing', icon: CreditCard, label: 'Pricing' },
+  { to: '/transactions', icon: ReceiptText, label: 'Transactions' },
 ];
 
 export default function AppLayout() {

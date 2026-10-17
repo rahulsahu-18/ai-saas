@@ -1,4 +1,5 @@
-import { MessageCircle, Wallet, FileText, Globe, Play, Zap } from "lucide-react";
+import { MessageCircle, Wallet, FileText, Globe, Play, Zap, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import BuyCredits from "../components/BuyCredits";
 
 const pricingItems = [
@@ -43,6 +44,16 @@ export default function Pricing() {
           Buy Credits
         </div>
         <div className="h-px flex-1 bg-zinc-200" />
+      </div>
+
+      <div className="mb-6 flex justify-end">
+        <Link
+          to="/transactions"
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          View transaction history
+          <ArrowRight size={15} />
+        </Link>
       </div>
 
       <BuyCredits />

@@ -9,6 +9,7 @@ import KnowledgeBases from "./pages/knowledge-base/KnowledgeBases";
 import MyFiles from "./pages/knowledge-base/Myfiles";
 import Chat from "./pages/chat/Chat";
 import Pricing from "./pages/Pricing";
+import CreditTransactions from "./pages/CreditTransactions";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/knowledge-bases" element={<KnowledgeBases />} />
             <Route path="/files" element={<MyFiles />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/transactions" element={<CreditTransactions />} />
           </Route>
         </Route>
 
