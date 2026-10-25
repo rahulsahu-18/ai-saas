@@ -13,5 +13,5 @@ export const CREDIT_PRICING = {
   paiSePerCredit: 200, // 200 paise per credit
   currency: "INR",
   minCredits: 1,
-  maxCredits: 10000, // Maximum credits per transaction
+  maxCredits: 10000,
 };

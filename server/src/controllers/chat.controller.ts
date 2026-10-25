@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { vectorStore } from "../utils/pinecone.config.js";
 import { model } from "../utils/model.js";
 import { getAuthenticatedUserId, systemMessage } from "../utils/utils.js";
+import { getRecentChatHistory } from "../utils/relevent.chat.js";
 
 const CHAT_CREDIT_COST = 1;
 
@@ -136,6 +137,7 @@ export const chat = async (req: Request, res: Response) => {
 
         currentChatId = chat.id;
       }
+      const prevChat = await getRecentChatHistory(currentChatId,userId);
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -163,11 +165,9 @@ export const chat = async (req: Request, res: Response) => {
       const sources = [
         ...new Set(documents.map((doc) => doc.metadata.fileName as string)),
       ];
-      const humanMessage = `context :-
+      console.log(prevChat)
+      const humanMessage = `context :- [${context},${prevChat}] user question :- ${message}`;
 
-  ${context}
-
-  user question :- ${message}`;
       const stream = await model.stream([
         ["system", systemMessage],
         ["human", humanMessage],
