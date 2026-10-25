@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma.js";
+import { trustedOrigins } from "./trusted-origins.js";
 
 const ensureSignupBonus = async (userId: string) => {
   await prisma.$transaction(async (transaction) => {
@@ -36,9 +37,7 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
-  trustedOrigins: [
-    "http://localhost:5173",
-  ],
+  trustedOrigins,
 
   databaseHooks: {
     user: {

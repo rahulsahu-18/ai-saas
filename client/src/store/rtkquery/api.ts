@@ -39,7 +39,7 @@ export type CreditTransaction = {
 	createdAt: string;
 };
 
-const apiBaseUrl = `${(import.meta.env.VITE_API_URL ?? "http://localhost:5000").replace(/\/$/, "")}/api/v1`;
+const apiBaseUrl = `${(import.meta.env.VITE_API_URL ?? "https://knowladge-base-backend.onrender.com").replace(/\/$/, "")}/api/v1`;
 
 export const api = createApi({
 	reducerPath: "api",

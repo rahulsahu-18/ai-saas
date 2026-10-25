@@ -13,11 +13,12 @@ import creditRouter from "./routes/credit.routes.js";
 import websiteRouter from "./routes/website.routes.js";
 import youtubeRoutes from "./routes/youtube.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import { trustedOrigins } from "./lib/trusted-origins.js";
 const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: trustedOrigins,
     credentials: true,
   })
 );

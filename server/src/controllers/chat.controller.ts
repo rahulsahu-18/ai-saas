@@ -166,7 +166,7 @@ export const chat = async (req: Request, res: Response) => {
         ...new Set(documents.map((doc) => doc.metadata.fileName as string)),
       ];
       console.log(prevChat)
-      const humanMessage = `context :- [${context},${prevChat}] user question :- ${message}`;
+      const humanMessage = `context :- ${context}, user question :- ${message}`;
 
       const stream = await model.stream([
         ["system", systemMessage],
