@@ -38,6 +38,11 @@ export const auth = betterAuth({
   }),
 
   trustedOrigins,
+  advanced: {
+    defaultCookieAttributes: process.env.BETTER_AUTH_URL?.startsWith("https://")
+      ? { sameSite: "none", secure: true }
+      : undefined,
+  },
 
   databaseHooks: {
     user: {
