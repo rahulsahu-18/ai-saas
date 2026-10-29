@@ -27,14 +27,18 @@ export default function SocialButtons() {
   return (
     <div className="space-y-3">
       {/* Google button */}
+      <div className="relative">
       <button
         type="button"
         id="google-signin-btn"
-        onClick={() => void handleOAuth("google")}
-        disabled={isAnyLoading}
-        className="flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:border-zinc-300 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.99]"
+        onClick={() => {
+          // Block API call, show toast instead
+          toast("Google Sign-in coming soon", { icon: "⏳" });
+        }}
+        disabled={true}
+        className="flex h-11 w-full items-center justify-center gap-3 rounded-xl border border-zinc-200 bg-white text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:border-zinc-300 cursor-not-allowed opacity-60 active:scale-[0.99]"
       >
-        {googleLoading ? (
+        {false ? (
           <Loader2 size={18} className="animate-spin" />
         ) : (
           <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24">

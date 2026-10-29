@@ -219,7 +219,7 @@ export default function Chat() {
       {/* Input composer */}
       <div className="shrink-0 px-4 pb-4 pt-2">
         <div className="mx-auto max-w-3xl">
-          <div className="relative rounded-2xl border border-zinc-200 bg-white shadow-sm transition focus-within:border-zinc-400 focus-within:shadow-md">
+          <div className="relative transition focus-within:border-zinc-400 focus-within:shadow-md">
             <textarea
               ref={textareaRef}
               value={input}

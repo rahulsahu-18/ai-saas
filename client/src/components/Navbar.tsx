@@ -32,7 +32,7 @@ export default function Navbar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-xs font-bold text-white">
             K
           </div>
-          <span className="text-[17px] font-semibold tracking-tight">Knowbase</span>
+          <span className="text-[17px] font-semibold tracking-tight">Knowledgebase</span>
         </Link>
 
         {/* Desktop nav */}

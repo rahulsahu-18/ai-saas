@@ -21,6 +21,9 @@ export default function YouTubeForm({ onUploadSuccess }: YouTubeFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    toast("YouTube ingestion coming soon", { icon: "⏳" });
+    return;
+    
     if (!url.trim()) { setError("Please enter a YouTube URL"); return; }
     if (!validate(url)) { setError("Please enter a valid YouTube URL"); return; }
     setIsLoading(true);
