@@ -1,19 +1,32 @@
 import { YoutubeTranscript } from "youtube-transcript-plus";
 
-export async function getYoutubeTranscript(url: string): Promise<{text:string,title:string}> {
-  const response = await fetch(
-    `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
-  );
+export async function getYoutubeTranscript(url: string): Promise<{text:string,title:string,unavailable?: boolean}> {
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+    );
 
-  if (!response.ok) {
-    throw new Error("Unable to get YouTube video title");
+    if (!response.ok) {
+      throw new Error("Unable to get YouTube video title");
+    }
+
+    const data = await response.json();
+
+    let transcript;
+    try {
+      transcript = await YoutubeTranscript.fetchTranscript(url);
+    } catch (err) {
+      console.error("Failed to fetch transcript", err instanceof Error ? err.message : err);
+      // if transcript fetching fails, mark video as unavailable
+      return { text: "", title: data.title, unavailable: true };
+    }
+
+    const text = transcript.map((chunk) => chunk.text).join(" ");
+    return { text, title: data.title };
+  } catch (error) {
+    console.error("Youtube transcript error", error instanceof Error ? error.message : error);
+    throw error;
   }
-
-  const data = await response.json();
-
-  const transcript = await YoutubeTranscript.fetchTranscript(url);
-  const text = transcript.map((chunk) => chunk.text).join(" ");
-  return { text, title: data.title };
 }
 
 export function extractYoutubeVideoId(url: string) {

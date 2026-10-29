@@ -27,9 +27,12 @@ export default function YouTubeForm({ onUploadSuccess }: YouTubeFormProps) {
     try {
       const data = await ingestYouTube({ url }).unwrap();
       if (data.success) { toast.success("YouTube video added!"); setUrl(""); onUploadSuccess?.(); }
-      else setError(data.message || "Failed to add video");
-    } catch {
-      const msg = "Failed to add video. Try again.";
+      else {
+        setError(data.message || "Failed to add video");
+        toast.error(data.message || "Failed to add video");
+      }
+    } catch (error: any) {
+      const msg = error?.message || "Failed to add video. Try again.";
       setError(msg); toast.error(msg);
     } finally { setIsLoading(false); }
   };

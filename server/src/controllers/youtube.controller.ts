@@ -18,13 +18,18 @@ export const ingestYoutubeData = async (req:Request,res:Response) => {
     // check url from yt or not 
     const videoId = extractYoutubeVideoId(url);
     if(!videoId) {
-        return res.status(400).json({success:false,message:"invalid youtube video url"});
+        return res.status(400).json({success:false,message:"Invalid YouTube video URL"});
     }
-    
+
     try {
-        const {text,title} = await getYoutubeTranscript(url);
+        const {text,title,unavailable} = await getYoutubeTranscript(url);
+
+        if (unavailable) {
+            return res.status(404).json({success:false,message:`The video with ID \"${videoId}\" is no longer available or has been removed. Please check the video URL or ID and try again.`});
+        }
+
         const documentId = crypto.randomUUID();
-        
+
         // Check credits and perform operations in transaction
         const charged = await prisma.$transaction(async (transaction) => {
           const result = await transaction.creditAccount.updateMany({

@@ -28,7 +28,11 @@ export default function DocumentForm({ onUploadSuccess }: DocumentFormProps) {
   const handleFile = (file: File) => {
     setError("");
     const err = validate(file);
-    if (err) { setError(err); return; }
+    if (err) {
+      setError(err);
+      toast.error(err);
+      return;
+    }
     setSelectedFile(file);
   };
 
