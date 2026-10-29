@@ -37,7 +37,7 @@ export function ChatSidebar() {
           </div>
 
           <span className="text-sm font-semibold">
-            Knowbase
+            Knowledgebase
           </span>
         </a>
 
