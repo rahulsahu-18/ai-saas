@@ -62,7 +62,7 @@ export default function AppLayout() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-xs font-bold text-white">
               K
             </div>
-            <span className="text-sm font-semibold">Knowbase</span>
+            <span className="text-sm font-semibold">Knowledgebase</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
