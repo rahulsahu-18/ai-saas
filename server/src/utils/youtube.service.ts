@@ -43,9 +43,13 @@ export function extractYoutubeVideoId(url: string) {
 
     // youtu.be/VIDEO_ID
     if (hostname === "youtu.be") {
-      const videoId = pathname.split("/")[1];
-      return videoId || null;
-    }
+          let videoId = pathname.split("/")[1];
+          if (videoId) {
+            // Remove query parameters if present
+            videoId = videoId.split('?')[0];
+          }
+          return videoId || null;
+        }
 
     // youtube.com/shorts/VIDEO_ID
     if (hostname === "youtube.com" && pathname.startsWith("/shorts/")) {
