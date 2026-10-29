@@ -170,11 +170,11 @@ const ingestDocument = async (req: Request, res: Response) => {
       message: "document added to knowladge base",
     });
   } catch (error) {
-    console.error("Ingest error:", error);
+    console.error("Ingest error:", error instanceof Error ? error.message : error);
 
     return res.status(500).json({
       success: false,
-      error: "Something went wrong",
+      error: error instanceof Error ? error.message : "Something went wrong",
     });
   }
 };

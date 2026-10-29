@@ -81,8 +81,8 @@ export const ingestYoutubeData = async (req:Request,res:Response) => {
         await chunkAndEmbading({userId,text,documentId,fileName:title,sourceType:'YOUTUBE',sourceUrl:url});
         return res.status(200).json({success:true,message:"youtube data added successfully"});
     } catch (error) {
-        console.log(error);
-        return res.status(500).json({success:false,message:"something went wrong while adding yt data"});
+        console.error("YouTube ingest error:", error instanceof Error ? error.message : error);
+        return res.status(500).json({success:false,message:error instanceof Error ? error.message : "something went wrong while adding yt data"});
     }
 }
 
